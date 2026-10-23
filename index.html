@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Редкие номера РФ — Photoreal &amp; Ultra Lite</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="bg" aria-hidden="true"></canvas>
+
+  <!-- Аппаратно-дружелюбные векторные градиенты для фотореалистичной штамповки ГОСТ (0% нагрузки на CPU/GPU) -->
+  <svg width="0" height="0" style="position:absolute;pointer-events:none" aria-hidden="true" focusable="false">
+    <defs>
+      <!-- Светоотражающая ретрорефлективная пленка 3M на алюминиевой пластине (как на фото 6566.jpg и 6565.jpg) -->
+      <linearGradient id="pl-metal" x1="0" y1="0" x2="0.12" y2="1">
+        <stop offset="0%" stop-color="#f8fafc"/>
+        <stop offset="35%" stop-color="#eef1f6"/>
+        <stop offset="75%" stop-color="#e1e5ec"/>
+        <stop offset="100%" stop-color="#d2d7e0"/>
+      </linearGradient>
+
+      <!-- Внешняя завальцованная алюминиевая кромка пластины -->
+      <linearGradient id="pl-rim" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#ffffff"/>
+        <stop offset="50%" stop-color="#b8c0cc"/>
+        <stop offset="100%" stop-color="#646d7a"/>
+      </linearGradient>
+
+      <!-- Глубокий черный глянец термотрансферной пленки на выдавленных буквах (Hot Stamp Foil) -->
+      <linearGradient id="pl-ink" x1="0" y1="0" x2="0.08" y2="1">
+        <stop offset="0%" stop-color="#2c3038"/>
+        <stop offset="16%" stop-color="#141619"/>
+        <stop offset="55%" stop-color="#090a0c"/>
+        <stop offset="100%" stop-color="#1c1f24"/>
+      </linearGradient>
+
+      <!-- Мягкий диагональный блик дневного света на поверхности номера -->
+      <linearGradient id="pl-sheen" x1="0" y1="0" x2="1" y2="0.55">
+        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.48"/>
+        <stop offset="28%" stop-color="#ffffff" stop-opacity="0.10"/>
+        <stop offset="48%" stop-color="#ffffff" stop-opacity="0"/>
+        <stop offset="75%" stop-color="#0f172a" stop-opacity="0.04"/>
+        <stop offset="100%" stop-color="#ffffff" stop-opacity="0.22"/>
+      </linearGradient>
+
+      <!-- Металлическая развальцовка отверстия под крепежный болт -->
+      <radialGradient id="pl-hole" cx="50%" cy="50%" r="50%">
+        <stop offset="42%" stop-color="#12151a"/>
+        <stop offset="68%" stop-color="#5c6472"/>
+        <stop offset="86%" stop-color="#f8fafc"/>
+        <stop offset="100%" stop-color="#8b93a2"/>
+      </radialGradient>
+    </defs>
+  </svg>
+
+  <main class="app">
+    <header class="topbar">
+      <div class="stat"><span class="stat-label">Деньги</span><span id="money" class="stat-value">0 ₽</span></div>
+      <div class="stat" id="slots-box"><span class="stat-label">Шкаф</span><span id="slots" class="stat-value">0 / 100</span></div>
+      <div class="stat"><span class="stat-label">На шкафу</span><span id="shelf-value" class="stat-value">0 ₽</span></div>
+    </header>
+
+    <section class="stage" id="stage">
+      <div class="plate-wrap" id="plate-wrap"></div>
+      <div class="info">
+        <div id="rarity" class="rarity"></div>
+        <div id="price" class="price"></div>
+        <div id="tags" class="tags"></div>
+      </div>
+      <div class="actions">
+        <button id="btn-get" class="btn btn-primary" type="button">Получить номер</button>
+        <button id="btn-sell" class="btn" type="button" disabled>Продать</button>
+      </div>
+      <div id="status" class="status" aria-live="polite"></div>
+    </section>
+
+    <section class="panel" id="shelf-panel">
+      <div class="panel-head">
+        <h2 id="shelf-title">Базовый шкаф</h2>
+        <button id="btn-sell-all" class="btn btn-small" type="button">Продать всё</button>
+      </div>
+      <div id="shelf-grid" class="shelf-grid"></div>
+      <div class="pager">
+        <button id="pg-prev" class="btn btn-small" type="button">‹</button>
+        <span id="pg-info">1 / 1</span>
+        <button id="pg-next" class="btn btn-small" type="button">›</button>
+      </div>
+    </section>
+
+    <section class="panel upgrade">
+      <div id="upgrade-text" class="upgrade-text"></div>
+      <button id="btn-upgrade" class="btn btn-primary" type="button">Купить</button>
+    </section>
+
+    <footer class="app-footer">
+      <span class="footer-hint">Пробел: получить номер • Клавиша C: Чит-меню • </span>
+      <button id="btn-dev-trigger" class="btn-dev-link" type="button" title="Меню разработчика">v1.5.0-pro</button>
+    </footer>
+  </main>
+
+  <!-- Модальное окно авторизации доступа -->
+  <div id="modal-pwd" class="modal-backdrop" hidden>
+    <div class="modal-card dev-modal-auth" role="dialog" aria-modal="true" aria-labelledby="pwd-title">
+      <div class="modal-header">
+        <h3 id="pwd-title">Служебный вход</h3>
+        <button id="btn-pwd-close" class="modal-close-btn" type="button" aria-label="Закрыть">✕</button>
+      </div>
+      <p class="modal-subtitle">Введите ключ доступа:</p>
+      <form id="form-pwd" class="modal-form" onsubmit="return false;">
+        <input type="password" id="dev-pwd-input" class="dev-input" placeholder="Ключ доступа..." maxlength="20" autocomplete="off">
+        <div id="dev-pwd-error" class="modal-error"></div>
+        <div class="modal-actions">
+          <button id="btn-dev-pwd-submit" class="btn btn-dev-primary" type="submit">Подтвердить</button>
+          <button id="btn-dev-pwd-cancel" class="btn btn-dev-secondary" type="button">Отмена</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Системный контейнер интерфейса чит-меню -->
+  <div id="modal-dev" class="modal-backdrop" hidden></div>
+
+  <script src="logic.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
